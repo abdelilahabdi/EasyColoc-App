@@ -3,7 +3,7 @@
 return [
 
 
-//auth de crud developp
+
     /*
     |--------------------------------------------------------------------------
     | Authentication Defaults
