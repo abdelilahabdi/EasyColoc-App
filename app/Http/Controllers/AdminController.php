@@ -27,7 +27,7 @@ class AdminController extends Controller
         $totalExpenses = Expense::count();
         $bannedUsers = User::where('is_banned', true)->count();
 
-        // Get recent users de expenses
+        // Get recent users 
         $recentUsers = User::latest()->take(10)->get();
 
         // Get recent colocations
