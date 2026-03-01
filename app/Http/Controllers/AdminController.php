@@ -21,13 +21,13 @@ class AdminController extends Controller
             abort(403, 'Accès refusé. Réservé aux administrateurs.');
         }
 
-        // Get statistics pour ex
+        // Get statistics 
         $totalUsers = User::count();
         $totalColocations = Colocation::count();
         $totalExpenses = Expense::count();
         $bannedUsers = User::where('is_banned', true)->count();
 
-        // Get recent users
+        // Get recent users de expenses
         $recentUsers = User::latest()->take(10)->get();
 
         // Get recent colocations
