@@ -21,7 +21,7 @@ class AdminController extends Controller
             abort(403, 'Accès refusé. Réservé aux administrateurs.');
         }
 
-        // Get statistics
+        // Get statistics de expenses
         $totalUsers = User::count();
         $totalColocations = Colocation::count();
         $totalExpenses = Expense::count();

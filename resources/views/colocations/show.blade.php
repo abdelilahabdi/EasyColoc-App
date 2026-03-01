@@ -677,7 +677,7 @@
             document.getElementById('settlementModal').classList.add('hidden');
         }
 
-        // Close modal on escape key de blade
+        // Close modal on escape key 
         document.addEventListener('keydown', function (event) {
             if (event.key === 'Escape') {
                 closeSettlementModal();
