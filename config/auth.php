@@ -3,7 +3,7 @@
 return [
 
 
-//auth de crud
+//auth de crud develop logic
     /*
     |--------------------------------------------------------------------------
     | Authentication Defaults
