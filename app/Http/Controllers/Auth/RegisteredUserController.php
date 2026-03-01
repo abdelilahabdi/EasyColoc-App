@@ -39,12 +39,9 @@ class RegisteredUserController extends Controller
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
+            'is_admin' => User::count() === 0, // First user becomes admin
+            'role' => User::count() === 0 ? 'admin' : 'user', // Global Admin for first user
         ]);
-
-        // Si c'est le premier utilisateur (ID = 1), le désigné comme admin
-        if ($user->id === 1) {
-            $user->update(['role' => 'admin']);
-        }
 
         event(new Registered($user));
 

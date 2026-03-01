@@ -2,9 +2,21 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Category extends Model
 {
-    //
+    use HasFactory;
+
+    protected $fillable = ['name', 'colocation_id'];
+
+    /**
+     * Get the colocation that owns the category.
+     */
+    public function colocation(): BelongsTo
+    {
+        return $this->belongsTo(Colocation::class);
+    }
 }

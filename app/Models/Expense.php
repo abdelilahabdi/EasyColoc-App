@@ -2,11 +2,16 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use App\Models\transaction;
 
 class Expense extends Model
 {
+    use HasFactory;
+
     /**
      * The attributes that are mass assignable.
      *
@@ -16,7 +21,7 @@ class Expense extends Model
         'title',
         'amount',
         'expense_date',
-        'user_id',
+        'payer_id',
         'colocation_id',
         'category_id',
     ];
@@ -35,11 +40,20 @@ class Expense extends Model
     }
 
     /**
-     * Get the user that owns the expense.
+     * Get the user that owns the expense (the payer).
+     */
+    public function payer(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'payer_id');
+    }
+
+    /**
+     * Get the user that owns the expense (alias for payer).
+     * This provides backward compatibility with code using user() instead of payer().
      */
     public function user(): BelongsTo
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(User::class, 'payer_id');
     }
 
     /**
@@ -56,5 +70,10 @@ class Expense extends Model
     public function category(): BelongsTo
     {
         return $this->belongsTo(Category::class);
+    }
+
+    public function transactions (){
+
+        return $this->HasMany(transaction::class);
     }
 }

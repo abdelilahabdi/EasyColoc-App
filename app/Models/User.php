@@ -24,6 +24,9 @@ class User extends Authenticatable
         'email',
         'password',
         'role',
+        'is_admin',
+        'is_banned',
+        'reputation',
     ];
 
     /**
@@ -46,6 +49,8 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'is_admin' => 'boolean',
+            'is_banned' => 'boolean',
         ];
     }
 
@@ -55,16 +60,61 @@ class User extends Authenticatable
     public function colocations(): BelongsToMany
     {
         return $this->belongsToMany(Colocation::class, 'colocation_user')
-            ->withPivot('role', 'left_at')
+            ->withPivot('role', 'joined_at', 'left_at')
             ->withTimestamps();
     }
 
     /**
-     * The expenses that belong to the user.
+     * The colocations owned by the user.
+     */
+    public function ownedColocations(): HasMany
+    {
+        return $this->hasMany(Colocation::class, 'owner_id');
+    }
+
+    /**
+     * The expenses that belong to the user (as payer).
      */
     public function expenses(): HasMany
     {
-        return $this->hasMany(Expense::class);
+        return $this->hasMany(Expense::class, 'payer_id');
+    }
+
+    /**
+     * The settlements where the user is the sender (payer).
+     */
+    public function settlementsSent(): HasMany
+    {
+        return $this->hasMany(Settlement::class, 'sender_id');
+    }
+
+    /**
+     * The settlements where the user is the receiver (recipient).
+     */
+    public function settlementsReceived(): HasMany
+    {
+        return $this->hasMany(Settlement::class, 'receiver_id');
+    }
+
+    /**
+     * The payments where the user is the sender (payer).
+     */
+    public function paymentsSent(): HasMany
+    {
+        return $this->hasMany(Payment::class, 'from_user_id');
+    }
+
+    /**
+     * The payments where the user is the receiver (recipient).
+     */
+    public function paymentsReceived(): HasMany
+    {
+        return $this->hasMany(Payment::class, 'to_user_id');
+    }
+
+    public function transactions (){
+
+        return $this->HasMany(transaction::class);
     }
 
     /**
@@ -73,5 +123,53 @@ class User extends Authenticatable
     public function isGlobalAdmin(): bool
     {
         return $this->role === 'admin';
+    }
+
+    /**
+     * Check if the user is an admin (is_admin flag).
+     */
+    public function isAdmin(): bool
+    {
+        return $this->is_admin === true;
+    }
+
+    /**
+     * Check if the user is banned.
+     */
+    public function isBanned(): bool
+    {
+        return $this->is_banned === true;
+    }
+
+    /**
+     * Ban the user.
+     */
+    public function ban(): bool
+    {
+        return $this->update(['is_banned' => true]);
+    }
+
+    /**
+     * Unban the user.
+     */
+    public function unban(): bool
+    {
+        return $this->update(['is_banned' => false]);
+    }
+
+    /**
+     * Scope to get only admins.
+     */
+    public function scopeAdmins($query)
+    {
+        return $query->where('is_admin', true);
+    }
+
+    /**
+     * Scope to get only banned users.
+     */
+    public function scopeBanned($query)
+    {
+        return $query->where('is_banned', true);
     }
 }
