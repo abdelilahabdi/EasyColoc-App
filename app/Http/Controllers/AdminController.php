@@ -83,7 +83,7 @@ class AdminController extends Controller
             abort(403, 'Accès refusé. Réservé aux administrateurs.');
         }
 
-        // Unban the user
+        // Unban the user pour commit 
         $user->update(['is_banned' => false]);
 
         return redirect()->route('admin.dashboard')
