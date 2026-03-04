@@ -10,22 +10,22 @@ use Illuminate\Support\Facades\Gate;
 
 class CategoryController extends Controller
 {
-    /**
-     * Store a newly created resource in storage.
-     */
+    
+     // khezen wa7ed element jdid f data base 
+     
     public function store(Request $request, Colocation $colocation): RedirectResponse
     {
-        // Validate the request
+        // nte2eked wach data li jaya s7i7a 
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
         ]);
 
-        // Check if the authenticated user is the owner of the colocation
+        // te2eked wach user li dayer login hewa mol colocation 
         if (!Gate::allows('update', $colocation)) {
             abort(403, 'Vous n\'êtes pas autorisé à créer une catégorie dans cette colocation.');
         }
 
-        // Create the category associated with the colocation
+        // nsayeb category merbota b colocation 
         $colocation->categories()->create([
             'name' => $validated['name'],
         ]);
@@ -34,22 +34,22 @@ class CategoryController extends Controller
             ->with('success', 'Catégorie créée avec succès.');
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
+    
+     // n7ayed element specified men storage db
+     
     public function destroy(Colocation $colocation, Category $category): RedirectResponse
     {
-        // Check if the authenticated user is the owner of the colocation
+        // te2eked wach user li dayer login hewa mol collocation 
         if (!Gate::allows('update', $colocation)) {
             abort(403, 'Vous n\'êtes pas autorisé à supprimer une catégorie dans cette colocation.');
         }
 
-        // Verify that the category belongs to this colocation
+        // nte2eked wach had category tabe3a l had colocation
         if ($category->colocation_id !== $colocation->id) {
             abort(403, 'Cette catégorie n\'appartient pas à cette colocation.');
         }
 
-        // Delete the category
+        // delet category
         $category->delete();
 
         return redirect()->back()

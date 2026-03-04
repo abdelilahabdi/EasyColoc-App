@@ -13,10 +13,18 @@ return new class extends Migration
     {
         Schema::create('transactions', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('debtor_id')->references('id')->on('users');
-            $table->foreignId('creditor_id')->references('id')->on('users');
-            $table->foreignId('colocation_id')->references('id')->on('colocations');
-            $table->foreignId('expense_id')->references('id')->on('expenses');
+            
+
+            $table->foreignId('debtor_id')->constrained('users')->cascadeOnDelete();
+
+            $table->foreignId('creditor_id')->constrained('users')->cascadeOnDelete();
+
+            $table->foreignId('colocation_id')->constrained()->cascadeOnDelete();
+
+            $table->foreignId('expense_id')->constrained()->cascadeOnDelete();
+
+
+
             $table->decimal('amount' , 9 , 2);
             $table->enum('status' , ['pending' , 'paid']);
             $table->timestamps();

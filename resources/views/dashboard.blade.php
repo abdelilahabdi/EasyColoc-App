@@ -102,7 +102,7 @@
                 <h3 class="text-lg font-semibold text-gray-900 mb-4">Statistiques rapides</h3>
                 
                 @php
-                    $balances = $activeColocation->calculateBalances();
+                    $balances = $activeColocation->calculateBalancesWithSettlements();
                     $userBalance = $balances[auth()->id()] ?? 0;
                 @endphp
 

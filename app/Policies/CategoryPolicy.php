@@ -7,10 +7,6 @@ use App\Models\User;
 
 class CategoryPolicy
 {
-    /**
-     * Determine whether the user can create categories in the colocation.
-     * Only the owner can create categories.
-     */
     public function create(User $user, $colocation): bool
     {
         // Vérifier que l'utilisateur est membre actif de la colocation
@@ -23,10 +19,7 @@ class CategoryPolicy
         return $colocation->owner_id === $user->id;
     }
 
-    /**
-     * Determine whether the user can update the category.
-     * Only the owner of the colocation can update.
-     */
+   
     public function update(User $user, Category $category): bool
     {
         $colocation = $category->colocation;
@@ -44,10 +37,7 @@ class CategoryPolicy
         return $colocation->owner_id === $user->id;
     }
 
-    /**
-     * Determine whether the user can delete the category.
-     * Only the owner of the colocation can delete.
-     */
+   
     public function delete(User $user, Category $category): bool
     {
         $colocation = $category->colocation;

@@ -19,14 +19,14 @@ class InvitationController extends Controller
         $this->invitationService = $invitationService;
     }
 
-    /**
-     * Send an invitation to join a colocation.
-     */
+    
+     // Send invitation to join colocation
+     
     public function invite(Request $request, Colocation $colocation): RedirectResponse
     {
         $this->authorize('inviteMember', $colocation);
 
-        // Validate the request
+        // te2eked anaho info correcte avant mankhezenha
         $validated = $request->validate([
             'email' => ['required', 'email'],
         ]);
@@ -47,16 +47,16 @@ class InvitationController extends Controller
         }
     }
 
-    /**
-     * Accept an invitation to join a colocation.
-     * 
-     * Uses route model binding with ID, but validates token for security.
-     */
+    
+     // Accept an invitation to join a colocation.
+     
+     // utiliser route model binding with ID, mais validates token for security.  tjib element direct men url checker 3la token b7al invitations bach nedemno lien s7i7 w machi ay wa7ed yeste3mlo 
+     
     public function accept(Invitation $invitation): RedirectResponse
     {
         $user = Auth::user();
 
-        // Check if the user already has an active colocation
+        // Check  user already has an active colocation
         $hasActiveColocation = $user->colocations()
             ->where('status', 'active')
             ->where(function ($query) use ($user) {
@@ -70,7 +70,7 @@ class InvitationController extends Controller
                 ->with('error', 'Vous avez déjà une colocation active.');
         }
 
-        // Validate using the service with the invitation token
+        // Validate using service with invitation token
         try {
             $updatedInvitation = $this->invitationService->acceptInvitation($invitation->token, $user);
 
@@ -82,14 +82,14 @@ class InvitationController extends Controller
         }
     }
 
-    /**
-     * Decline an invitation to join a colocation.
-     */
+    
+     // refed wa7ed invitation bach join colocation
+
     public function decline(Invitation $invitation): RedirectResponse
     {
         $user = Auth::user();
 
-        // Verify the invitation belongs to the authenticated user
+        // Verify the invitation dyal user li dayer login 
         if (strtolower($user->email) !== strtolower($invitation->email)) {
             return redirect()->route('dashboard')
                 ->with('error', 'Cette invitation ne vous est pas destinée.');
@@ -106,20 +106,20 @@ class InvitationController extends Controller
         }
     }
 
-    /**
-     * Show invitation details (for preview before accepting).
-     */
+    
+     // Show invitation details for preview before accepting
+     
     public function show(Invitation $invitation)
     {
         $user = Auth::user();
 
-        // Check if invitation belongs to current user
+        // Check if invitation dyal user li dayer login
         if (strtolower($user->email) !== strtolower($invitation->email)) {
             return redirect()->route('dashboard')
                 ->with('error', 'Cette invitation ne vous est pas destinée.');
         }
 
-        // Check if invitation is still valid
+        // Check if invitation is still valid 
         if ($invitation->status !== 'pending') {
             return redirect()->route('dashboard')
                 ->with('error', 'Cette invitation a déjà été traitée.');

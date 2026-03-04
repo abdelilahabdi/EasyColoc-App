@@ -7,17 +7,7 @@ use App\Models\Colocation;
 class BalanceService
 {
     /**
-     * Calculate balances for all active members of a colocation.
-     * 
-     * This method:
-     * - Retrieves active members (left_at = null)
-     * - Calculates total expenses for the colocation
-     * - Calculates individual share = total / number of active members
-     * - Calculates total paid by each member
-     * - Calculates balance = total_paid - individual_share
-     * - Returns a structured array without storing in database
-     * - Uses eager loading for performance
-     * 
+    
      * @param Colocation $colocation
      * @return array<int, array{total_paid: float, share: float, balance: float}>
      */

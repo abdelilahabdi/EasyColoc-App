@@ -9,31 +9,31 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
-/**
- * Controller pour la gestion des paiements
- * 
- * Actions disponibles:
- * - markAsPaid: Marque un paiement comme payé
- */
+
+ // Controller pour la gestion des paiements
+  
+ //Actions disponibles
+ // markAsPaid   Marque un paiement comme payE
+ 
 class PaymentController extends Controller
 {
-    /**
-     * PaymentService injecté
-     */
+    
+     // PaymentService injecté
+     
     protected PaymentService $paymentService;
 
-    /**
-     * Constructeur avec injection de dépendance
-     */
+    
+     // Constructeur avec injection de dépendance
+     
     public function __construct(PaymentService $paymentService)
     {
         $this->paymentService = $paymentService;
     }
 
     /**
-     * Marque un paiement comme payé
+     * Marque un paiement comme paye
      * 
-     * Vérifications:
+     * Verifications:
      * - L'utilisateur est autorisé via PaymentPolicy
      * - Le paiement existe et appartient à la colocation
      * - Transaction DB pour la sécurité
@@ -44,7 +44,7 @@ class PaymentController extends Controller
      */
     public function markAsPaid(Colocation $colocation, Payment $payment): RedirectResponse
     {
-        // Vérifier que le paiement appartient à cette colocation
+        // Vérifier que le paiement lier a cette colocation
         if ($payment->colocation_id !== $colocation->id) {
             abort(403, 'Ce paiement n\'appartient pas à cette colocation.');
         }

@@ -507,7 +507,7 @@
                                         <div class="flex justify-between items-center">
                                             <span class="text-lg font-bold text-green-600">{{ number_format($debt->amount, 2) }}
                                                 EUR</span>
-                                            <form action="{{ route('transaction.paid' , $debt->id) }}" method="post">
+                                            
                                                 @csrf
                                                 @method('put')
                                                 <button type="submit"

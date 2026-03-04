@@ -6,10 +6,12 @@ use App\Models\Colocation;
 use App\Models\Expense;
 use App\Models\Invitation;
 use App\Models\Payment;
+use App\Models\Settlement;
 use App\Policies\ColocationPolicy;
 use App\Policies\ExpensePolicy;
 use App\Policies\InvitationPolicy;
 use App\Policies\PaymentPolicy;
+use App\Policies\SettlementPolicy;
 use App\Services\BalanceService;
 use App\Services\ColocationService;
 use App\Services\InvitationService;
@@ -40,9 +42,9 @@ class AppServiceProvider extends ServiceProvider
             return new SettlementService($app->make(BalanceService::class));
         });
 
-        // Register ReputationService with BalanceService dependency
+        // Register ReputationService
         $this->app->singleton(ReputationService::class, function ($app) {
-            return new ReputationService($app->make(BalanceService::class));
+            return new ReputationService();
         });
 
         // Register InvitationService with ColocationService dependency
@@ -50,12 +52,9 @@ class AppServiceProvider extends ServiceProvider
             return new InvitationService($app->make(ColocationService::class));
         });
 
-        // Register PaymentService with BalanceService and ReputationService dependencies
+        // Register PaymentService with BalanceService dependency
         $this->app->singleton(PaymentService::class, function ($app) {
-            return new PaymentService(
-                $app->make(BalanceService::class),
-                $app->make(ReputationService::class)
-            );
+            return new PaymentService($app->make(BalanceService::class));
         });
     }
 
@@ -68,13 +67,14 @@ class AppServiceProvider extends ServiceProvider
         view()->composer('*', function ($view) {
             if (auth()->check()) {
                 $userColocations = auth()->user()->colocations()
+                    ->with('users')
                     ->orderBy('status', 'asc')
                     ->orderBy('created_at', 'desc')
                     ->get()
                     ->map(function ($colocation) {
                         $membership = $colocation->users->where('id', auth()->id())->first();
-                        $colocation->user_role = $membership->pivot->role ?? 'member';
-                        $colocation->user_left_at = $membership->pivot->left_at ?? null;
+                        $colocation->user_role = $membership ? $membership->pivot->role : 'member';
+                        $colocation->user_left_at = $membership ? $membership->pivot->left_at : null;
                         return $colocation;
                     });
                 
@@ -93,5 +93,6 @@ class AppServiceProvider extends ServiceProvider
         Expense::class => ExpensePolicy::class,
         Invitation::class => InvitationPolicy::class,
         Payment::class => PaymentPolicy::class,
+        Settlement::class => SettlementPolicy::class,
     ];
 }

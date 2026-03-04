@@ -5,24 +5,11 @@ namespace App\Policies;
 use App\Models\Invitation;
 use App\Models\User;
 
-/**
- * Policy pour les actions liées aux invitations
- * 
- * Règles d'autorisation:
- * - view: L'email de l'invitation doit correspondre à l'utilisateur
- * - accept: L'email de l'invitation doit correspondre à l'utilisateur et l'invitation doit être pending
- * - decline: L'email de l'invitation doit correspondre à l'utilisateur et l'invitation doit être pending
- * - destroy: Seul l'owner de la colocation peut révoquer l'invitation
- */
+
 class InvitationPolicy
 {
     /**
-     * Détermine si l'utilisateur peut voir l'invitation
-     * 
-     * Conditions:
-     * - L'email de l'invitation correspond à l'utilisateur
-     * - OU l'utilisateur est l'owner de la colocation
-     * 
+    
      * @param User $user
      * @param Invitation $invitation
      * @return bool
@@ -44,13 +31,7 @@ class InvitationPolicy
     }
 
     /**
-     * Détermine si l'utilisateur peut accepter l'invitation
-     * 
-     * Conditions:
-     * - L'email de l'invitation correspond à l'utilisateur
-     * - L'invitation est en status 'pending'
-     * - L'invitation n'a pas expiré
-     * 
+     
      * @param User $user
      * @param Invitation $invitation
      * @return bool
@@ -76,12 +57,7 @@ class InvitationPolicy
     }
 
     /**
-     * Détermine si l'utilisateur peut refuser l'invitation
-     * 
-     * Conditions:
-     * - L'email de l'invitation correspond à l'utilisateur
-     * - L'invitation est en status 'pending'
-     * 
+     
      * @param User $user
      * @param Invitation $invitation
      * @return bool
@@ -102,11 +78,7 @@ class InvitationPolicy
     }
 
     /**
-     * Détermine si l'utilisateur peut révoquer/supprimer l'invitation
-     * 
-     * Conditions:
-     * - L'utilisateur est l'owner de la colocation
-     * 
+    
      * @param User $user
      * @param Invitation $invitation
      * @return bool
@@ -124,10 +96,7 @@ class InvitationPolicy
     }
 
     /**
-     * Détermine si l'utilisateur peut envoyer une invitation
-     * 
-     * Utilise la méthode inviteMember de ColocationPolicy
-     * 
+     
      * @param User $user
      * @param Invitation $invitation
      * @return bool

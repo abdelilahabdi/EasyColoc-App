@@ -7,13 +7,7 @@ use App\Models\User;
 class ColocationService
 {
     /**
-     * Vérifie si l'utilisateur a une colocation active.
-     * 
-     * Critères :
-     * - L'utilisateur a une relation dans colocation_user
-     * - left_at est null (n'a pas quitté)
-     * - La colocation associée a status = 'active'
-     *
+    
      * @param User $user
      * @return bool
      */
@@ -26,12 +20,7 @@ class ColocationService
     }
 
     /**
-     * Vérifie si l'utilisateur peut rejoindre une colocation.
-     * 
-     * Retourne un tableau structuré :
-     * - 'can_join' : bool - true si l'utilisateur peut rejoindre
-     * - 'message' : string - message d'erreur si bloqué
-     *
+     
      * @param User $user
      * @return array{can_join: bool, message: string|null}
      */

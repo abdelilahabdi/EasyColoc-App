@@ -11,7 +11,7 @@ use App\Models\Colocation;
 class CategoryFactory extends Factory
 {
     /**
-     * Define the model's default state.
+     * Define the model default state.
      *
      * @return array<string, mixed>
      */

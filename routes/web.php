@@ -46,6 +46,9 @@ Route::middleware('auth')->group(function () {
         Route::post('payments/{payment}/mark-as-paid', [PaymentController::class, 'markAsPaid'])->name('colocations.payments.markAsPaid');
     });
 
+    // Settlement confirmation route (outside colocation prefix)
+    Route::post('settlements/{settlement}/confirm', [SettlementController::class, 'confirm'])->name('settlements.confirm');
+
     // Invitation routes
     Route::get('invitations/{invitation}', [InvitationController::class, 'show'])->name('invitations.show');
     Route::post('invitations/{invitation}/accept', [InvitationController::class, 'accept'])->name('invitations.accept');
@@ -61,7 +64,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/admin/users/{user}/ban', [AdminController::class, 'ban'])->name('admin.users.ban');
     Route::post('/admin/users/{user}/unban', [AdminController::class, 'unban'])->name('admin.users.unban');
 
-    Route::put('transaction/paid/{transaction}' , [TransactionController::class , 'update'])->name('transaction.paid');
+    
 
 
     

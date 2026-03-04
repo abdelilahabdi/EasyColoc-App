@@ -29,7 +29,9 @@ class ExpenseControllerTest extends TestCase
         $this->outsider = User::factory()->create();
 
         // Create colocation and add owner
-        $this->colocation = Colocation::factory()->create();
+        $this->colocation = Colocation::factory()->create([
+            'owner_id' => $this->owner->id,
+        ]);
         $this->colocation->users()->attach($this->owner->id, ['role' => 'owner']);
 
         // Add member to colocation
@@ -57,7 +59,7 @@ class ExpenseControllerTest extends TestCase
         $this->assertDatabaseHas('expenses', [
             'title' => 'Test Expense',
             'amount' => 100.50,
-            'user_id' => $this->member->id,
+            'payer_id' => $this->member->id,
             'colocation_id' => $this->colocation->id,
             'category_id' => $this->category->id,
         ]);
@@ -112,7 +114,7 @@ class ExpenseControllerTest extends TestCase
     {
         // Member creates an expense
         $expense = Expense::factory()->create([
-            'user_id' => $this->member->id,
+            'payer_id' => $this->member->id,
             'colocation_id' => $this->colocation->id,
             'category_id' => $this->category->id,
         ]);
@@ -131,7 +133,7 @@ class ExpenseControllerTest extends TestCase
     public function test_creator_can_delete_their_own_expense(): void
     {
         $expense = Expense::factory()->create([
-            'user_id' => $this->member->id,
+            'payer_id' => $this->member->id,
             'colocation_id' => $this->colocation->id,
             'category_id' => $this->category->id,
         ]);
@@ -155,7 +157,7 @@ class ExpenseControllerTest extends TestCase
 
         // Member creates an expense
         $expense = Expense::factory()->create([
-            'user_id' => $this->member->id,
+            'payer_id' => $this->member->id,
             'colocation_id' => $this->colocation->id,
             'category_id' => $this->category->id,
         ]);
@@ -170,10 +172,10 @@ class ExpenseControllerTest extends TestCase
     /**
      * Test: Destroy expense - Outsider cannot delete expense
      */
-    public function test_outsider_cannot_delete_expense(): void
+        public function test_outsider_cannot_delete_expense(): void
     {
         $expense = Expense::factory()->create([
-            'user_id' => $this->member->id,
+            'payer_id' => $this->member->id,
             'colocation_id' => $this->colocation->id,
             'category_id' => $this->category->id,
         ]);
@@ -190,11 +192,13 @@ class ExpenseControllerTest extends TestCase
      */
     public function test_cannot_delete_expense_from_different_colocation(): void
     {
-        $otherColocation = Colocation::factory()->create();
+        $otherColocation = Colocation::factory()->create([
+            'owner_id' => $this->owner->id,
+        ]);
         $otherColocation->users()->attach($this->owner->id, ['role' => 'owner']);
 
         $expense = Expense::factory()->create([
-            'user_id' => $this->owner->id,
+            'payer_id' => $this->owner->id,
             'colocation_id' => $otherColocation->id,
             'category_id' => $this->category->id,
         ]);

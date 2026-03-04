@@ -11,32 +11,30 @@ use Illuminate\Support\Facades\Gate;
 
 class AdminController extends Controller
 {
-    /**
-     * Display the admin dashboard with global statistics.
-     */
+    
     public function index()
     {
-        // Only allow global admins
+        // dyal global admin
         if (!auth()->user() || !auth()->user()->isGlobalAdmin()) {
             abort(403, 'Accès refusé. Réservé aux administrateurs.');
         }
 
-        // Get statistics 
+        // njib statistics 
         $totalUsers = User::count();
         $totalColocations = Colocation::count();
         $totalExpenses = Expense::count();
         $bannedUsers = User::where('is_banned', true)->count();
 
-        // Get recent users 
+        // njib users jdad
         $recentUsers = User::latest()->take(10)->get();
 
-        // Get recent colocations
+        // njib colocations jdad 
         $recentColocations = Colocation::with('users')
             ->latest()
             ->take(10)
             ->get();
 
-        // Get active colocations
+        // njib colocations li active
         $activeColocations = Colocation::where('status', 'active')->count();
 
         return view('admin.dashboard', compact(
@@ -50,40 +48,38 @@ class AdminController extends Controller
         ));
     }
 
-    /**
-     * Ban a user.
-     */
+   // ban dyal user 
     public function ban(User $user): RedirectResponse
     {
-        // Only allow global admins
+        // dyal global admins
         if (!auth()->user() || !auth()->user()->isGlobalAdmin()) {
             abort(403, 'Accès refusé. Réservé aux administrateurs.');
         }
 
-        // Cannot ban yourself
+        // mate9erch banner rasek
         if (auth()->id() === $user->id) {
             return redirect()->route('admin.dashboard')
                 ->with('error', 'Vous ne pouvez pas vous bannir vous-même.');
         }
 
-        // Ban the user
+        // Ban user
         $user->update(['is_banned' => true]);
 
         return redirect()->route('admin.dashboard')
             ->with('success', 'Utilisateur banni avec succès.');
     }
 
-    /**
-     * Unban a user.
-     */
+    
+      // t7ayed ban 3la chi user
+     
     public function unban(User $user): RedirectResponse
     {
-        // Only allow global admins
+        // dyal gha global admins
         if (!auth()->user() || !auth()->user()->isGlobalAdmin()) {
             abort(403, 'Accès refusé. Réservé aux administrateurs.');
         }
 
-        // Unban the user 
+        // t7ayed ban 3la chi user 
         $user->update(['is_banned' => false]);
 
         return redirect()->route('admin.dashboard')

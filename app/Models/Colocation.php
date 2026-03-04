@@ -14,7 +14,7 @@ class Colocation extends Model
 
     protected $fillable = ['name', 'owner_id', 'status'];
 
-    // ==================== RELATIONSHIPS ====================
+    // relationships
 
     public function users(): BelongsToMany
     {
@@ -77,7 +77,7 @@ class Colocation extends Model
      */
     public function calculateBalances(): array
     {
-        $activeMembers = $this->activeMembers()->get(['users.id', 'users.name']);
+        $activeMembers = $this->activeMembers()->get();
         $memberCount = $activeMembers->count();
 
         if ($memberCount === 0) {
@@ -137,7 +137,7 @@ class Colocation extends Model
      */
     private function calculateSettlementAdjustments(): array
     {
-        $settlements = $this->settlements()->get();
+        $settlements = $this->settlements()->where('status', 'completed')->get();
         $adjustments = [];
 
         foreach ($settlements as $settlement) {
@@ -165,8 +165,8 @@ class Colocation extends Model
         }
 
         // Load active members to ensure users exist
-        $activeUserIds = $this->activeMembers()->pluck('id')->toArray();
-
+        $activeUserIds = $this->activeMembers()->get()->pluck('id')->toArray();
+        
         $debtors = [];
         $creditors = [];
 

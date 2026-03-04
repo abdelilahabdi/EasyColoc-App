@@ -2,10 +2,10 @@
 
 namespace Database\Factories;
 
-use Illuminate\Database\Eloquent\Factories\Factory;
+use App\Models\Category;
 use App\Models\Colocation;
 use App\Models\User;
-use App\Models\Category;
+use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
  * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\Expense>
@@ -13,7 +13,7 @@ use App\Models\Category;
 class ExpenseFactory extends Factory
 {
     /**
-     * Define the model's default state.
+     * Define the model default state.
      *
      * @return array<string, mixed>
      */
@@ -23,7 +23,7 @@ class ExpenseFactory extends Factory
             'title' => fake()->sentence(3),
             'amount' => fake()->randomFloat(2, 10, 500),
             'expense_date' => fake()->date(),
-            'user_id' => User::factory(),
+            'payer_id' => User::factory(),
             'colocation_id' => Colocation::factory(),
             'category_id' => Category::factory(),
         ];

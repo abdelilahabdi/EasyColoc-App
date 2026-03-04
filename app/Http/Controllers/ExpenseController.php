@@ -11,15 +11,15 @@ use App\Models\transaction;
 
 class ExpenseController extends Controller
 {
-    /**
-     * Show the form for creating a new expense.
-     * Only active members are authorized to create expenses.
-     */
+    
+     // Show form for creating new expense
+     // gha active members li y9edro create expenses
+     
     public function create(Colocation $colocation): View|RedirectResponse
     {
         $this->authorize('create', [Expense::class, $colocation]);
 
-        // Get categories for this colocation
+        // jib categirie li tab3in lhad colocation
         $categories = $colocation->categories()->orderBy('name')->get();
 
         return view('colocations.expenses.create', [
@@ -28,21 +28,21 @@ class ExpenseController extends Controller
         ]);
     }
 
-    /**
-     * Store a newly created resource in storage.
-     * Only active members are authorized to create expenses.
-     */
+    //Store or nekhezen element expense jdid f db 
+    
+     // gha member active li ye9edro create w yzido expense
+     
     public function store(StoreExpenseRequest $request, Colocation $colocation): RedirectResponse
     {
         $this->authorize('create', [Expense::class, $colocation]);
 
-        // Check if colocation is active and user hasn't left
+        // te2eked anaho colocation mazal khedam w user makherejch menha
         $membership = $colocation->users()->where('user_id', auth()->id())->first();
         if ($colocation->status !== 'active' || ($membership && $membership->pivot->left_at !== null)) {
             abort(403, 'Vous ne pouvez pas ajouter de dépense à une colocation archivée.');
         }
 
-        // Create the expense associated with the colocation
+        // nsayeb expense lier with colocation
         $expense = $colocation->expenses()->create([
             'title' => $request->validated('title'),
             'amount' => $request->validated('amount'),
@@ -81,14 +81,14 @@ class ExpenseController extends Controller
             ->with('success', 'Dépense créée avec succès.');
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
+    
+     // 7ayed element specifique men db
+     
     public function destroy(Colocation $colocation, Expense $expense): RedirectResponse
     {
         $this->authorize('delete', $expense);
 
-        // Verify that the expense belongs to this colocation
+        // Verify had expense merbot b had colocation
         if ($expense->colocation_id !== $colocation->id) {
             abort(403, 'Cette dépense n\'appartient pas à cette colocation.');
         }
@@ -103,7 +103,7 @@ class ExpenseController extends Controller
     ]);
 }
 
-        // Delete the expense
+        // Delet expense
         $expense->delete();
 
         return redirect()->back()

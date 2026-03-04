@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -10,7 +11,7 @@ use Illuminate\Database\Eloquent\Factories\Factory;
 class ColocationFactory extends Factory
 {
     /**
-     * Define the model's default state.
+     * Define the model default state.
      *
      * @return array<string, mixed>
      */
@@ -18,6 +19,7 @@ class ColocationFactory extends Factory
     {
         return [
             'name' => fake()->name() . "'s Colocation",
+            'owner_id' => User::factory(),
             'status' => 'active',
         ];
     }

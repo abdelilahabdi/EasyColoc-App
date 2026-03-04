@@ -6,74 +6,148 @@ use App\Models\Colocation;
 use App\Models\Settlement;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Gate;
-use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 class SettlementController extends Controller
 {
-    /**
-     * Store a newly created settlement in storage.
-     * 
-     * Validates the payment and ensures:
-     * - The user is a member of the colocation
-     * - Only the sender, receiver, or Owner can create a settlement
-     */
+    
+     // Floating-point tolerance when comparing debt amounts
+     
+    private const AMOUNT_EPSILON = 0.01;
+
+    
+     // Store a newly created settlement and apply it immediately
+     
     public function store(Request $request, Colocation $colocation): RedirectResponse
     {
-        // Check if colocation is active
-        if ($colocation->status !== 'active') {
-            abort(403, 'Vous ne pouvez pas enregistrer de paiement pour une colocation archivée.');
-        }
+        abort_if(
+            $colocation->status !== 'active',
+            403,
+            'Vous ne pouvez pas enregistrer de paiement pour une colocation archivee.'
+        );
 
-        // Validate the request
         $validated = $request->validate([
-            'sender_id' => ['required', 'exists:users,id'],
-            'receiver_id' => ['required', 'exists:users,id', 'different:sender_id'],
+            'sender_id' => ['required', 'integer', 'exists:users,id'],
+            'receiver_id' => ['required', 'integer', 'exists:users,id', 'different:sender_id'],
             'amount' => ['required', 'numeric', 'min:0.01'],
-            'settlement_date' => ['required', 'date'],
+            'settlement_date' => ['required', 'date', 'before_or_equal:today'],
         ]);
 
-        // Check if the authenticated user is a member of the colocation
-        if (!$colocation->users()->where('users.id', auth()->id())->exists()) {
-            abort(403, 'Vous n\'êtes pas membre de cette colocation.');
+        $senderId = (int) $validated['sender_id'];
+        $receiverId = (int) $validated['receiver_id'];
+        $amount = round((float) $validated['amount'], 2);
+
+        if (!$this->isActiveMember($colocation, (int) $request->user()->id)) {
+            abort(403, 'Vous n\'etes pas un membre actif de cette colocation.');
         }
 
-        // Get the sender and receiver to check roles
-        $sender = \App\Models\User::find($validated['sender_id']);
-        $receiver = \App\Models\User::find($validated['receiver_id']);
-
-        // Check if sender and receiver are members of the colocation
-        if (!$colocation->users()->where('users.id', $validated['sender_id'])->exists()) {
-            abort(403, 'Le payeur n\'est pas membre de cette colocation.');
+        if (!$this->isActiveMember($colocation, $senderId)) {
+            abort(403, 'Le payeur n\'est pas un membre actif de cette colocation.');
         }
 
-        if (!$colocation->users()->where('users.id', $validated['receiver_id'])->exists()) {
-            abort(403, 'Le bénéficiaire n\'est pas membre de cette colocation.');
+        if (!$this->isActiveMember($colocation, $receiverId)) {
+            abort(403, 'Le beneficiaire n\'est pas un membre actif de cette colocation.');
         }
 
-        // Check authorization: only sender, receiver, or Owner can create settlement
-        $isSender = auth()->id() === $validated['sender_id'];
-        $isReceiver = auth()->id() === $validated['receiver_id'];
-        $isOwner = Gate::allows('update', $colocation);
+        $outstandingDebt = $this->findOutstandingDebtAmount($colocation, $senderId, $receiverId);
 
-        if (!$isSender && !$isReceiver && !$isOwner) {
-            abort(403, 'Vous n\'êtes pas autorisé à valider ce paiement.');
+        if ($outstandingDebt === null) {
+            throw ValidationException::withMessages([
+                'amount' => 'Ce reglement ne correspond a aucune dette en cours.',
+            ]);
         }
 
-        // Create the settlement
-        $settlement = Settlement::create([
-            'sender_id' => $validated['sender_id'],
-            'receiver_id' => $validated['receiver_id'],
-            'colocation_id' => $colocation->id,
-            'amount' => $validated['amount'],
-            'settlement_date' => $validated['settlement_date'],
-            'status' => 'completed',
-        ]);
+        if ($amount - $outstandingDebt > self::AMOUNT_EPSILON) {
+            throw ValidationException::withMessages([
+                'amount' => sprintf(
+                    'Le montant du reglement ne peut pas depasser la dette restante de %.2f EUR.',
+                    $outstandingDebt
+                ),
+            ]);
+        }
 
-        // Add +10 reputation points to the sender (the one who paid)
-        $sender->increment('reputation', 10);
+        $duplicateSettlementExists = $colocation->settlements()
+            ->where('sender_id', $senderId)
+            ->where('receiver_id', $receiverId)
+            ->where('amount', $amount)
+            ->whereDate('settlement_date', $validated['settlement_date'])
+            ->exists();
+
+        if ($duplicateSettlementExists) {
+            throw ValidationException::withMessages([
+                'amount' => 'Ce paiement a deja ete enregistre.',
+            ]);
+        }
+
+        DB::transaction(function () use ($colocation, $senderId, $receiverId, $amount, $validated): void {
+            $colocation->settlements()->create([
+                'sender_id' => $senderId,
+                'receiver_id' => $receiverId,
+                'amount' => $amount,
+                'settlement_date' => $validated['settlement_date'],
+                'status' => Settlement::STATUS_COMPLETED,
+            ]);
+        });
 
         return redirect()->back()
-            ->with('success', 'Paiement marqué comme effectué avec succès. +10 points de réputation!');
+            ->with('success', 'Paiement marque comme paye avec succes.');
+    }
+
+    
+      // Confirm a pending settlement
+     
+    public function confirm(Settlement $settlement): RedirectResponse
+    {
+        $settlement->loadMissing('colocation');
+
+        $this->authorize('confirm', $settlement);
+
+        if ($settlement->isCompleted()) {
+            return redirect()->back()
+                ->with('error', 'Ce paiement a deja ete confirme.');
+        }
+
+        $outstandingDebt = $this->findOutstandingDebtAmount(
+            $settlement->colocation,
+            (int) $settlement->sender_id,
+            (int) $settlement->receiver_id
+        );
+
+        if ($outstandingDebt === null || ((float) $settlement->amount - $outstandingDebt) > self::AMOUNT_EPSILON) {
+            return redirect()->route('colocations.show', $settlement->colocation)
+                ->with('error', 'Ce paiement ne correspond plus a la dette restante. Veuillez actualiser la page.');
+        }
+
+        DB::transaction(function () use ($settlement): void {
+            $settlement->update(['status' => Settlement::STATUS_COMPLETED]);
+        });
+
+        return redirect()->route('colocations.show', $settlement->colocation)
+            ->with('success', 'Paiement confirme avec succes.');
+    }
+
+    
+     // Determine whether the given user still belongs to the active member list
+     
+    private function isActiveMember(Colocation $colocation, int $userId): bool
+    {
+        return $colocation->activeMembers()->whereKey($userId)->exists();
+    }
+
+    
+     // Resolve the current outstanding debt for a debtor/creditor pair.
+     
+    private function findOutstandingDebtAmount(Colocation $colocation, int $senderId, int $receiverId): ?float
+    {
+        foreach ($colocation->getSimplifiedDebts() as $debt) {
+            if ((int) $debt['from'] !== $senderId || (int) $debt['to'] !== $receiverId) {
+                continue;
+            }
+
+            return round((float) $debt['amount'], 2);
+        }
+
+        return null;
     }
 }

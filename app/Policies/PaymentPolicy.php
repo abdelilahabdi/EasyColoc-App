@@ -6,22 +6,11 @@ use App\Models\Colocation;
 use App\Models\Payment;
 use App\Models\User;
 
-/**
- * Policy pour les actions liées aux paiements
- * 
- * Règles d'autorisation:
- * - Seul un membre actif ou un admin peut marquer un paiement comme payé
- * - Le paiement doit appartenir à la même colocation
- */
+
 class PaymentPolicy
 {
     /**
-     * Détermine si l'utilisateur peut marquer un paiement comme payé
-     * 
-     * Conditions:
-     * - L'utilisateur est un admin global
-     * - OU l'utilisateur est un membre actif de la colocation (left_at = null)
-     * 
+   
      * @param User $user Utilisateur authentifié
      * @param Payment $payment Paiement à marquer comme payé
      * @return bool

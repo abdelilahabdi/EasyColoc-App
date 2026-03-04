@@ -5,30 +5,13 @@ namespace App\Services;
 use App\Models\Colocation;
 use App\Models\User;
 
-/**
- * Service de calcul des règlements ("Qui doit à qui")
- * 
- * Ce service:
- * - Calcule dynamiquement les soldes des membres
- * - Optimise le nombre de transactions nécessaire pour solder les dettes
- * - Ne stocke rien en base (calcul à la demande)
- * - Respecte les règles métier: membres actifs uniquement
- * 
- * Architecture:
- * - Injection de BalanceService pour les calculs de balance
- * - Algorithme greedy pour minimiser les transactions
- * - Code testable et découplé
- */
+
 class SettlementService
 {
-    /**
-     * BalanceService injecté pour récupérer les balances dynamiques
-     */
+    
     protected BalanceService $balanceService;
 
-    /**
-     * Montant minimal pour une transaction significative
-     */
+    
     protected const MIN_AMOUNT = 0.01;
 
     /**
@@ -42,15 +25,7 @@ class SettlementService
     }
 
     /**
-     * Génère les règlements pour une colocation
-     * 
-     * Algorithme:
-     * 1. Récupère les balances dynamiques depuis BalanceService
-     * 2. Filtre les membres actifs uniquement
-     * 3. Sépare créditeurs (balance > 0) et débiteurs (balance < 0)
-     * 4. Applique l'algorithme greedy pour optimiser les transactions
-     * 5. Retourne un tableau structuré des règlements
-     * 
+    
      * @param Colocation $colocation
      * @return array<int, array{from_user_id: int, to_user_id: int, amount: float}>
      */
@@ -109,12 +84,7 @@ class SettlementService
     }
 
     /**
-     * Génère les règlements en tenant compte d'une dette imputée
-     * 
-     * Utilisé lorsqu'un owner retire un membre avec une dette:
-     * - La dette du membre retiré est imputée au owner
-     * - Le owner devient responsable de cette dette
-     * 
+     
      * @param Colocation $colocation
      * @param int $removedMemberId ID du membre retiré
      * @return array<int, array{from_user_id: int, to_user_id: int, amount: float}>
@@ -162,10 +132,7 @@ class SettlementService
     }
 
     /**
-     * Génère les règlements à partir d'un tableau de balances
-     * 
-     * Méthode protégée utilisée en interne
-     * 
+     
      * @param array $balances
      * @return array<int, array{from_user_id: int, to_user_id: int, amount: float}>
      */
@@ -212,13 +179,7 @@ class SettlementService
     }
 
     /**
-     * Optimise les transactions avec l'algorithme greedy
-     * 
-     * Cet algorithme:
-     * - Associe toujours le plus gros débiteur au plus gros créditeur
-     * - Minimise le nombre total de transactions
-     * - Utilise des arrondis pour la précision décimale
-     * 
+     
      * @param array $debtors
      * @param array $creditors
      * @return array<int, array{from_user_id: int, to_user_id: int, amount: float}>

@@ -3,34 +3,36 @@
 namespace App\Http\Controllers;
 
 use App\Models\Colocation;
-use App\Models\Invitation;
-use App\Models\transaction;
 use App\Models\User;
 use App\Services\ColocationService;
 use App\Services\InvitationService;
-use Illuminate\Http\Request;
+use App\Services\ReputationService;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Support\Str;
+use Illuminate\Http\Request;
 
 class ColocationController extends Controller
 {
     protected ColocationService $colocationService;
     protected InvitationService $invitationService;
+    protected ReputationService $reputationService;
 
-    public function __construct(ColocationService $colocationService, InvitationService $invitationService)
-    {
+    public function __construct(
+        ColocationService $colocationService,
+        InvitationService $invitationService,
+        ReputationService $reputationService
+    ) {
         $this->colocationService = $colocationService;
         $this->invitationService = $invitationService;
+        $this->reputationService = $reputationService;
     }
 
-    /**
-     * Display a listing of user's colocations (active and archived).
-     */
+
+     // wri l user colocation kamlin active
+     
     public function index()
     {
         $user = auth()->user();
-        
-        // Get all colocations (active, cancelled, left) with counts
+
         $colocations = $user->colocations()
             ->withCount(['users', 'expenses'])
             ->with('owner')
@@ -41,10 +43,10 @@ class ColocationController extends Controller
                 $membership = $colocation->users->where('id', $user->id)->first();
                 $colocation->user_role = $membership->pivot->role ?? 'member';
                 $colocation->user_left_at = $membership->pivot->left_at ?? null;
+
                 return $colocation;
             });
 
-        // Check if user can create a new colocation
         $canCreateNew = !$user->colocations()
             ->where('status', 'active')
             ->wherePivot('left_at', null)
@@ -53,27 +55,25 @@ class ColocationController extends Controller
         return view('colocations.index', compact('colocations', 'canCreateNew'));
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
+
+     // Show form for creating new resource
+    
     public function create()
     {
         return view('colocations.create');
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
+    
+     // khezen wa7ed element jdid f db
+     
     public function store(Request $request): RedirectResponse
     {
-        // Validate the request
         $validated = $request->validate([
             'name' => ['required', 'string'],
         ]);
 
         $user = auth()->user();
 
-        // Check if the user already has an active colocation
         $hasActiveColocation = $user->colocations()
             ->where('status', 'active')
             ->where(function ($query) use ($user) {
@@ -84,150 +84,131 @@ class ColocationController extends Controller
 
         if ($hasActiveColocation) {
             return redirect()->route('dashboard')
-                ->with('error', 'Vous avez déjà une colocation active.');
+                ->with('error', 'Vous avez deja une colocation active.');
         }
 
-        // Create new colocation with owner_id
         $colocation = Colocation::create([
             'name' => $validated['name'],
             'status' => 'active',
             'owner_id' => $user->id,
         ]);
 
-        // Attach the user as owner
         $user->colocations()->attach($colocation->id, ['role' => 'owner']);
 
-        // Redirect to the show method
         return redirect()->route('colocations.show', $colocation);
     }
 
-    /**
-     * Display the specified resource.
-     */
+    
+      // afficher element li te7eded w specifier 
+     
     public function show(Colocation $colocation)
     {
         $this->authorize('view', $colocation);
 
-        // Retrieve colocation with its members, expenses, categories and settlements
         $colocation->load(['users', 'expenses.category', 'categories', 'settlements.sender', 'settlements.receiver']);
 
-        // Calculate balances for each member
-        $balances = $colocation->calculateBalances();
-
-        // Get simplified debts (with settlements deducted)
+        $balances = $colocation->calculateBalancesWithSettlements();
         $simplifiedDebts = $colocation->getSimplifiedDebts();
-        
-        // Create transactions variable for backward compatibility
-        $transactions = collect($simplifiedDebts)->map(function($debt) use ($colocation) {
+
+        $transactions = collect($simplifiedDebts)->map(function ($debt) use ($colocation) {
             return (object) [
                 'debtor' => $colocation->users->firstWhere('id', $debt['from']),
                 'creditor' => $colocation->users->firstWhere('id', $debt['to']),
-                'amount' => $debt['amount']
+                'amount' => $debt['amount'],
             ];
         });
 
-
-        // Create a map of user_id => User for easy name lookup in the view
         $usersMap = $colocation->users->keyBy('id');
-
-        // Get month filter from request
         $month = request('month');
 
-        // Filter expenses by month if provided
         $expenses = $colocation->expenses()->with('category', 'user');
+
         if ($month) {
             $expenses = $expenses->whereYear('expense_date', substr($month, 0, 4))
                 ->whereMonth('expense_date', substr($month, 5, 2));
         }
+
         $expenses = $expenses->orderBy('expense_date', 'desc')->get();
 
         return view('colocations.show', compact('colocation', 'balances', 'simplifiedDebts', 'transactions', 'usersMap', 'expenses', 'month'));
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
+    
+      // afficher form pour modifier 3la had element 
+     
     public function edit(Colocation $colocation)
     {
         //
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
+    
+     // pdate donner dyal had ellement f db 
+     
     public function update(Request $request, Colocation $colocation)
     {
         //
     }
 
-    /**
-     * Archive (cancel) the colocation instead of deleting.
-     */
+    
+     // khliha archiver blaset ma delete
+     
     public function destroy(Colocation $colocation): RedirectResponse
     {
         $this->authorize('delete', $colocation);
 
         if ($colocation->status === 'cancelled') {
             return redirect()->route('colocations.index')
-                ->with('error', 'Cette colocation est déjà annulée.');
+                ->with('error', 'Cette colocation est deja annulee.');
         }
 
         $colocation->update(['status' => 'cancelled']);
 
         return redirect()->route('colocations.index')
-            ->with('success', 'Colocation archivée avec succès.');
+            ->with('success', 'Colocation archivee avec succes.');
     }
 
-    /**
-     * Allow a member to leave the colocation.
-     */
+    
+     // khli member yekherej men colocation
+     
     public function leave(Colocation $colocation): RedirectResponse
     {
         $user = auth()->user();
-
-        // Check if user is a member of this colocation
         $membership = $colocation->users()->where('user_id', $user->id)->first();
 
         if (!$membership) {
             return redirect()->route('colocations.show', $colocation)
-                ->with('error', 'Vous n\'êtes pas membre de cette colocation.');
+                ->with('error', 'Vous n\'etes pas membre de cette colocation.');
         }
 
-        // Check if user is the owner (owner cannot leave, must cancel or transfer)
         if ($membership->pivot->role === 'owner') {
             return redirect()->route('colocations.show', $colocation)
-                ->with('error', 'Vous êtes le propriétaire. Vous ne pouvez pas quitter la colocation. Vous pouvez l\'annuler.');
+                ->with('error', 'Vous etes le proprietaire. Vous ne pouvez pas quitter la colocation. Vous pouvez l\'annuler.');
         }
 
-        // Calculate balance to determine reputation impact
-        $balances = $colocation->calculateBalances();
-        $userBalance = $balances[$user->id] ?? 0;
+        $reputationDelta = $this->reputationService->adjustReputationOnDeparture($user, $colocation);
 
-        // If user owes money (negative balance), apply -1 reputation
-        if ($userBalance < 0) {
-            $user->decrement('reputation');
-        } else {
-            // If user has no debt or is owed money, apply +1 reputation
-            $user->increment('reputation');
-        }
-
-        // Set left_at timestamp
         $colocation->users()->updateExistingPivot($user->id, ['left_at' => now()]);
 
         return redirect()->route('dashboard')
-            ->with('success', 'Vous avez quitté la colocation.');
+            ->with(
+                'success',
+                sprintf(
+                    'Vous avez quitte la colocation. Reputation %s%d.',
+                    $reputationDelta > 0 ? '+' : '',
+                    $reputationDelta
+                )
+            );
     }
 
-    /**
-     * Allow owner to remove a member from the colocation.
-     */
+    
+     // kheli owner remove a member from colocation
+     
     public function removeMember(Colocation $colocation, int $memberId): RedirectResponse
     {
         $member = User::findOrFail($memberId);
 
         $this->authorize('removeMember', [$colocation, $member]);
 
-        // Check if member exists in colocation
         $memberInColocation = $colocation->users()->where('user_id', $memberId)->first();
 
         if (!$memberInColocation) {
@@ -235,69 +216,51 @@ class ColocationController extends Controller
                 ->with('error', 'Ce membre n\'existe pas dans la colocation.');
         }
 
-        // Check if trying to remove owner (should be handled by policy, but double check)
         if ($memberInColocation->pivot->role === 'owner') {
             return redirect()->route('colocations.show', $colocation)
-                ->with('error', 'Vous ne pouvez pas retirer le propriétaire.');
+                ->with('error', 'Vous ne pouvez pas retirer le proprietaire.');
         }
 
-        // Calculate balance to determine reputation impact
-        $balances = $colocation->calculateBalances();
-        $memberBalance = $balances[$memberId] ?? 0;
+        $owner = auth()->user();
+        $reputationChanges = $this->reputationService->adjustReputationOnMemberRemoval($owner, $member, $colocation);
 
-        $user = auth()->user();
-
-        // If member owes money, owner inherits the debt (adjustment)
-        if ($memberBalance < 0) {
-            // Member gets -1 reputation for leaving with debt
-            $member->decrement('reputation');
-            // Owner gets -1 reputation for not settling debts before removing member
-            $user->decrement('reputation');
-        } else {
-            // Member gets +1 reputation for leaving without debt
-            $member->increment('reputation');
-        }
-
-        // Set left_at timestamp
         $colocation->users()->updateExistingPivot($memberId, ['left_at' => now()]);
 
         return redirect()->route('colocations.show', $colocation)
-            ->with('success', 'Membre retiré de la colocation.');
+            ->with(
+                'success',
+                $reputationChanges['had_debt']
+                    ? 'Membre retire avec dette. Reputation membre -1, owner -1.'
+                    : 'Membre retire sans dette. Reputation membre +1.'
+            );
     }
 
-    /**
-     * Allow owner to cancel the colocation.
-     */
+    
+      // kheli owner cancel colocation.
+     
     public function cancel(Colocation $colocation): RedirectResponse
     {
         $this->authorize('delete', $colocation);
 
-        $user = auth()->user();
+        $owner = auth()->user();
 
-        // Check if colocation is already cancelled
         if ($colocation->status === 'cancelled') {
             return redirect()->route('colocations.show', $colocation)
-                ->with('error', 'Cette colocation est déjà annulée.');
+                ->with('error', 'Cette colocation est deja annulee.');
         }
 
-        // Calculate balances for all members
-        $balances = $colocation->calculateBalances();
+        $reputationDelta = $this->reputationService->adjustReputationOnCancellation($owner, $colocation);
 
-        // Apply reputation to owner based on debts
-        $userBalance = $balances[$user->id] ?? 0;
-
-        if ($userBalance < 0) {
-            // Owner owes money - penalty
-            $user->decrement('reputation');
-        } else {
-            // Owner is owed money or settled - bonus
-            $user->increment('reputation');
-        }
-
-        // Mark colocation as cancelled
         $colocation->update(['status' => 'cancelled']);
 
         return redirect()->route('dashboard')
-            ->with('success', 'Colocation annulée avec succès.');
+            ->with(
+                'success',
+                sprintf(
+                    'Colocation annulee avec succes. Reputation %s%d.',
+                    $reputationDelta > 0 ? '+' : '',
+                    $reputationDelta
+                )
+            );
     }
 }

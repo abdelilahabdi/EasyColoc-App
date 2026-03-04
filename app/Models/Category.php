@@ -12,9 +12,9 @@ class Category extends Model
 
     protected $fillable = ['name', 'colocation_id'];
 
-    /**
-     * Get the colocation that owns the category.
-     */
+    
+    // jib colocation lier with the category.
+     
     public function colocation(): BelongsTo
     {
         return $this->belongsTo(Colocation::class);

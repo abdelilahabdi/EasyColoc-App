@@ -8,10 +8,7 @@ use App\Models\User;
 
 class ExpensePolicy
 {
-    /**
-     * Determine whether the user can create expenses in the colocation.
-     * Only active members (left_at = null) can create expenses.
-     */
+    
     public function create(User $user, Colocation $colocation): bool
     {
         $membership = $colocation->users()->where('user_id', $user->id)->first();
@@ -24,10 +21,7 @@ class ExpensePolicy
         return $membership->pivot->left_at === null;
     }
 
-    /**
-     * Determine whether the user can delete the expense.
-     * Owner of the colocation or creator of the expense can delete.
-     */
+    
     public function delete(User $user, Expense $expense): bool
     {
         // Get the colocation for this expense
