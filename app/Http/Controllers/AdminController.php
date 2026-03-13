@@ -19,7 +19,7 @@ class AdminController extends Controller
             abort(403, 'Accès refusé. Réservé aux administrateurs.');
         }
 
-        // njib statistics 
+        // njib men statistics 
         $totalUsers = User::count();
         $totalColocations = Colocation::count();
         $totalExpenses = Expense::count();

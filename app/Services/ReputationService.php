@@ -8,10 +8,10 @@ use App\Models\User;
 
 class ReputationService
 {
-    
+
     private const DEBT_EPSILON = 0.01;
 
-    
+
     public function adjustReputationOnDeparture(User $user, Colocation $colocation): int
     {
         if ($this->hasDebt($colocation, $user->id)) {
@@ -48,7 +48,7 @@ class ReputationService
         ];
     }
 
-    
+
     public function adjustReputationOnCancellation(User $owner, Colocation $colocation): int
     {
         if ($this->hasDebt($colocation, $owner->id)) {
@@ -58,13 +58,13 @@ class ReputationService
         return $this->incrementReputation($owner);
     }
 
-    
+
     public function hasDebt(Colocation $colocation, int $userId): bool
     {
         return $this->getBalance($colocation, $userId) < -self::DEBT_EPSILON;
     }
 
-    
+
     public function getBalance(Colocation $colocation, int $userId): float
     {
         $balances = $colocation->calculateBalancesWithSettlements();
@@ -72,7 +72,7 @@ class ReputationService
         return round((float) ($balances[$userId] ?? 0.0), 2);
     }
 
-    
+
     protected function incrementReputation(User $user): int
     {
         $user->increment('reputation');
@@ -80,7 +80,7 @@ class ReputationService
         return 1;
     }
 
-   
+
     protected function decrementReputation(User $user): int
     {
         $user->decrement('reputation');
@@ -88,7 +88,7 @@ class ReputationService
         return -1;
     }
 
-    
+
     public function getReputationLevel(User $user): string
     {
         $reputation = $user->reputation;
